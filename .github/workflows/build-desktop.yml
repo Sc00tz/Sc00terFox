@@ -60,7 +60,7 @@ jobs:
 
   build-linux:
     needs: determine-version
-    if: needs.determine-version.outputs.should_build == 'true' && (contains(github.event.inputs.platforms, 'linux') || contains(github.event.inputs.platforms, 'all') || github.event_name == 'schedule')
+    if: ${{ needs.determine-version.outputs.should_build == 'true' && (contains(github.event.inputs.platforms, 'linux') || contains(github.event.inputs.platforms, 'all') || github.event_name == 'schedule') }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
     
