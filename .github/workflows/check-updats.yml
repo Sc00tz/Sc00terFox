@@ -1,0 +1,53 @@
+name: Check Firefox Updates
+
+on:
+  schedule:
+    # Check daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Check latest Firefox version
+        id: check
+        run: |
+          LATEST=$(curl -s 'https://product-details.mozilla.org/1.0/firefox_versions.json' | \
+            jq -r '.LATEST_FIREFOX_VERSION')
+          
+          echo "Latest Firefox: $LATEST"
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          
+          # Check if we've built this version
+          if gh release view "v$LATEST" >/dev/null 2>&1; then
+            echo "already_built=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_built=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Create issue for new version
+        if: steps.check.outputs.already_built == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.check.outputs.latest }}';
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `New Firefox version available: ${version}`,
+              body: `Firefox ${version} has been released.
+              
+              To build this version, go to:
+              Actions → Build Firefox Desktop → Run workflow
+              
+              Or it will be built automatically on the next scheduled run.`,
+              labels: ['new-version']
+            });

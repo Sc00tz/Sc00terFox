@@ -1,0 +1,237 @@
+name: Build Firefox Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - debug
+          - release
+        default: 'debug'
+  schedule:
+    # Weekly on Sunday at 4 AM UTC (offset from desktop)
+    - cron: '0 4 * * 0'
+
+env:
+  BUILD_TYPE: ${{ github.event.inputs.build_type || 'debug' }}
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 420
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Free up disk space
+        run: |
+          echo "Before cleanup:"
+          df -h
+          
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          
+          echo "After cleanup:"
+          df -h
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/sdk
+          key: android-sdk-${{ runner.os }}
+          restore-keys: |
+            android-sdk-
+      
+      - name: Install Android SDK components
+        run: |
+          sdkmanager --install "platform-tools" \
+                               "platforms;android-34" \
+                               "build-tools;34.0.0" \
+                               "ndk;26.1.10909125"
+      
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+      
+      - name: Cache mozbuild
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.mozbuild
+            ~/.cargo
+          key: mozbuild-android-${{ runner.os }}
+          restore-keys: |
+            mozbuild-android-
+      
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            mercurial \
+            curl \
+            wget \
+            unzip \
+            rustc \
+            cargo \
+            nodejs
+      
+      - name: Clone mozilla-central
+        run: |
+          echo "Cloning mozilla-central..."
+          git clone --depth 1 --single-branch --branch master \
+            https://github.com/mozilla/gecko-dev.git mozilla-central
+          
+          cd mozilla-central
+          git log -1 --oneline
+      
+      - name: Apply patches
+        run: |
+          cd mozilla-central
+          
+          if [ -d "../patches/android" ] && [ "$(ls -A ../patches/android/*.patch 2>/dev/null)" ]; then
+            echo "Applying Android patches..."
+            for patch in ../patches/android/*.patch; do
+              echo "Applying $(basename $patch)..."
+              git apply "$patch" || patch -p1 < "$patch"
+            done
+          else
+            echo "No Android patches found"
+          fi
+      
+      - name: Setup mozconfig
+        run: |
+          if [ -f "configs/mozconfig-android" ]; then
+            cp configs/mozconfig-android mozilla-central/mozconfig
+          else
+            cat > mozilla-central/mozconfig <<'EOF'
+# Build Firefox for Android
+ac_add_options --enable-application=mobile/android
+ac_add_options --target=aarch64-linux-android
+
+# Optimization
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
+ac_add_options --disable-tests
+
+# Android SDK/NDK
+ac_add_options --with-android-ndk="$ANDROID_NDK_HOME"
+ac_add_options --with-android-sdk="$ANDROID_HOME"
+
+# Branding
+ac_add_options --with-branding=mobile/android/branding/unofficial
+
+# Disable unwanted
+ac_add_options --disable-crashreporter
+ac_add_options --disable-updater
+
+mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
+EOF
+          fi
+          
+          cat mozilla-central/mozconfig
+      
+      - name: Bootstrap build
+        run: |
+          cd mozilla-central
+          export MOZBUILD_STATE_PATH=$HOME/.mozbuild
+          ./mach --no-interactive bootstrap --application-choice=mobile_android
+      
+      - name: Build GeckoView
+        run: |
+          cd mozilla-central
+          export MOZBUILD_STATE_PATH=$HOME/.mozbuild
+          
+          echo "Building GeckoView at $(date)"
+          ./mach build
+          echo "GeckoView build complete at $(date)"
+      
+      - name: Build Fenix APK
+        run: |
+          cd mozilla-central/mobile/android/fenix
+          
+          # Configure for debug or release
+          if [ "${{ env.BUILD_TYPE }}" = "release" ]; then
+            echo "autosignReleaseWithDebugKey=true" > local.properties
+            ./gradlew assembleRelease
+            
+            APK_DIR="app/build/outputs/apk/fenix/release"
+            APK_PATTERN="*-release.apk"
+            OUTPUT_NAME="firefox-custom-android-release.apk"
+          else
+            ./gradlew assembleDebug
+            
+            APK_DIR="app/build/outputs/apk/fenix/debug"
+            APK_PATTERN="*-debug.apk"
+            OUTPUT_NAME="firefox-custom-android-debug.apk"
+          fi
+          
+          # Find and copy APK
+          find "$APK_DIR" -name "$APK_PATTERN" -exec cp {} ../../../../$OUTPUT_NAME \;
+          
+          cd ../../../..
+          ls -lh *.apk
+          
+          # Create checksum
+          sha256sum $OUTPUT_NAME > ${OUTPUT_NAME}.sha256
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-android-${{ env.BUILD_TYPE }}-${{ github.run_number }}
+          path: |
+            *.apk
+            *.sha256
+          retention-days: 30
+      
+      - name: Create release
+        if: env.BUILD_TYPE == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: Firefox Android Custom Build ${{ github.run_number }}
+          body: |
+            Firefox Android Custom Build
+            
+            Build Type: ${{ env.BUILD_TYPE }}
+            Build Date: ${{ github.event.repository.updated_at }}
+            
+            **Installation:**
+            1. Enable "Unknown sources" in Android settings
+            2. Download and install APK
+            3. Settings → About → Tap logo 5 times
+            4. Configure custom FxA servers
+            
+            **Note:** Debug-signed for testing
+          files: |
+            firefox-custom-android-*.apk
+            firefox-custom-android-*.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
