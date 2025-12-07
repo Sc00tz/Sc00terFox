@@ -60,11 +60,7 @@ jobs:
 
   build-linux:
     needs: determine-version
-    if: |
-      needs.determine-version.outputs.should_build == 'true' &&
-      (contains(github.event.inputs.platforms, 'linux') || 
-       contains(github.event.inputs.platforms, 'all') ||
-       github.event_name == 'schedule')
+    if: needs.determine-version.outputs.should_build == 'true' && (contains(github.event.inputs.platforms, 'linux') || contains(github.event.inputs.platforms, 'all') || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 360
     
@@ -228,11 +224,7 @@ EOF
 
   build-macos:
     needs: determine-version
-    if: |
-      needs.determine-version.outputs.should_build == 'true' &&
-      (contains(github.event.inputs.platforms, 'macos') || 
-       contains(github.event.inputs.platforms, 'all') ||
-       github.event_name == 'schedule')
+    if: needs.determine-version.outputs.should_build == 'true' && (contains(github.event.inputs.platforms, 'macos') || contains(github.event.inputs.platforms, 'all') || github.event_name == 'schedule')
     runs-on: macos-13
     timeout-minutes: 360
     
@@ -395,17 +387,17 @@ EOF
           VERSION="${{ needs.determine-version.outputs.version }}"
           
           cat > release-files/BUILD-INFO.txt <<EOF
-Firefox Custom Build v${VERSION}
-================================
-
-Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-Firefox Base Version: ${VERSION}
-Built via: GitHub Actions
-Repository: ${{ github.repository }}
-Commit: ${{ github.sha }}
-
-Platforms:
-----------
+          Firefox Custom Build v${VERSION}
+          ================================
+          
+          Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Firefox Base Version: ${VERSION}
+          Built via: GitHub Actions
+          Repository: ${{ github.repository }}
+          Commit: ${{ github.sha }}
+          
+          Platforms:
+          ----------
 EOF
           
           if [ -f "release-files/firefox-custom-${VERSION}-linux-x86_64.tar.bz2" ]; then
@@ -417,31 +409,31 @@ EOF
           fi
           
           cat >> release-files/BUILD-INFO.txt <<EOF
-
-Installation:
--------------
-Linux:
-  tar -xf firefox-custom-${VERSION}-linux-x86_64.tar.bz2
-  ./firefox/firefox
-
-macOS:
-  Open firefox-custom-${VERSION}-macos.dmg
-  Drag to Applications
-  Right-click > Open (first time only)
-
-Custom Features:
-----------------
-- Self-hosted Firefox Accounts (if patches applied)
-- Privacy-enhanced defaults
-- Telemetry disabled
-
-Verify Downloads:
------------------
-Check SHA256 checksums against provided .sha256 files
-
-Report Issues:
---------------
-${{ github.server_url }}/${{ github.repository }}/issues
+          
+          Installation:
+          -------------
+          Linux:
+            tar -xf firefox-custom-${VERSION}-linux-x86_64.tar.bz2
+            ./firefox/firefox
+          
+          macOS:
+            Open firefox-custom-${VERSION}-macos.dmg
+            Drag to Applications
+            Right-click > Open (first time only)
+          
+          Custom Features:
+          ----------------
+          - Self-hosted Firefox Accounts (if patches applied)
+          - Privacy-enhanced defaults
+          - Telemetry disabled
+          
+          Verify Downloads:
+          -----------------
+          Check SHA256 checksums against provided .sha256 files
+          
+          Report Issues:
+          --------------
+          ${{ github.server_url }}/${{ github.repository }}/issues
 EOF
           
           cat release-files/BUILD-INFO.txt
