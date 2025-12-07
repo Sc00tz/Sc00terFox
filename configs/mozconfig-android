@@ -1,44 +1,11 @@
-# Firefox Android build configuration
 ac_add_options --enable-application=mobile/android
 ac_add_options --target=aarch64-linux-android
-
 ac_add_options --enable-optimize
 ac_add_options --disable-debug
 ac_add_options --disable-tests
-
 ac_add_options --with-android-ndk="$ANDROID_NDK_HOME"
 ac_add_options --with-android-sdk="$ANDROID_HOME"
-
 ac_add_options --with-branding=mobile/android/branding/unofficial
-
 ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
-
 mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
-```
-
-**`.gitignore`**
-```
-# Build artifacts
-firefox-*/
-mozilla-central/
-obj-*/
-*.tar.bz2
-*.dmg
-*.apk
-*.sha256
-
-# Cache
-.mozbuild/
-.cargo/
-.gradle/
-
-# Temporary
-*.log
-tmp/
-
-# macOS
-.DS_Store
-
-# Keep patches
-!patches/**/*.patch
