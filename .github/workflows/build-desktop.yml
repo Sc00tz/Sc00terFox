@@ -7,17 +7,16 @@ on:
         description: 'Firefox version (e.g., 132.0 or latest)'
         required: false
         default: 'latest'
-      platforms:
-        description: 'Platforms to build (comma-separated: linux,macos or all)'
-        required: false
-        default: 'all'
+      build_linux:
+        description: 'Build Linux'
+        type: boolean
+        default: true
+      build_macos:
+        description: 'Build macOS'
+        type: boolean
+        default: true
   schedule:
-    # Weekly builds on Sunday at 2 AM UTC
     - cron: '0 2 * * 0'
-
-env:
-  FIREFOX_VERSION: ${{ github.event.inputs.firefox_version || 'latest' }}
-  BUILD_PLATFORMS: ${{ github.event.inputs.platforms || 'all' }}
 
 jobs:
   determine-version:
@@ -33,11 +32,11 @@ jobs:
       - name: Get Firefox version
         id: get-version
         run: |
-          if [ "${{ env.FIREFOX_VERSION }}" = "latest" ]; then
+          if [ "${{ inputs.firefox_version || 'latest' }}" = "latest" ]; then
             VERSION=$(curl -s 'https://product-details.mozilla.org/1.0/firefox_versions.json' | \
               jq -r '.LATEST_FIREFOX_VERSION')
           else
-            VERSION="${{ env.FIREFOX_VERSION }}"
+            VERSION="${{ inputs.firefox_version }}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building Firefox $VERSION"
@@ -49,7 +48,6 @@ jobs:
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
           
-          # Check if release exists
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "should_build=false" >> $GITHUB_OUTPUT
             echo "Version $VERSION already built"
@@ -60,7 +58,7 @@ jobs:
 
   build-linux:
     needs: determine-version
-    if: ${{ needs.determine-version.outputs.should_build == 'true' && (contains(github.event.inputs.platforms, 'linux') || contains(github.event.inputs.platforms, 'all') || github.event_name == 'schedule') }}
+    if: needs.determine-version.outputs.should_build == 'true' && (inputs.build_linux == true || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 360
     
@@ -73,7 +71,6 @@ jobs:
           echo "Before cleanup:"
           df -h
           
-          # Remove unnecessary software
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
@@ -154,25 +151,17 @@ jobs:
           if [ -f "configs/mozconfig-linux" ]; then
             cp configs/mozconfig-linux firefox-${VERSION}/mozconfig
           else
-            # Create default mozconfig
-            cat > firefox-${VERSION}/mozconfig <<'EOF'
-# Build Firefox for Linux
+            cat > firefox-${VERSION}/mozconfig <<'MOZCONFIG'
 ac_add_options --enable-application=browser
 ac_add_options --enable-optimize
 ac_add_options --disable-debug
 ac_add_options --disable-tests
 ac_add_options --enable-release
-
-# Branding
 ac_add_options --with-branding=browser/branding/unofficial
-
-# Disable unwanted features
 ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
-
-# Performance
 mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
-EOF
+MOZCONFIG
           fi
           
           echo "Using mozconfig:"
@@ -204,11 +193,9 @@ EOF
           
           ./mach package
           
-          # Find and rename package
           PACKAGE=$(find obj-*/dist -name "firefox-*.tar.bz2" | head -1)
           cp "$PACKAGE" ../firefox-custom-${VERSION}-linux-x86_64.tar.bz2
           
-          # Create checksums
           cd ..
           sha256sum firefox-custom-${VERSION}-linux-x86_64.tar.bz2 > \
             firefox-custom-${VERSION}-linux-x86_64.tar.bz2.sha256
@@ -224,7 +211,7 @@ EOF
 
   build-macos:
     needs: determine-version
-    if: needs.determine-version.outputs.should_build == 'true' && (contains(github.event.inputs.platforms, 'macos') || contains(github.event.inputs.platforms, 'all') || github.event_name == 'schedule')
+    if: needs.determine-version.outputs.should_build == 'true' && (inputs.build_macos == true || github.event_name == 'schedule')
     runs-on: macos-13
     timeout-minutes: 360
     
@@ -237,7 +224,6 @@ EOF
           echo "Before cleanup:"
           df -h
           
-          # Clean up
           sudo rm -rf /Users/runner/Library/Android
           sudo rm -rf /usr/local/lib/android
           
@@ -292,28 +278,18 @@ EOF
           if [ -f "configs/mozconfig-macos" ]; then
             cp configs/mozconfig-macos firefox-${VERSION}/mozconfig
           else
-            # Create default mozconfig for macOS
-            cat > firefox-${VERSION}/mozconfig <<'EOF'
-# Build Firefox for macOS
+            cat > firefox-${VERSION}/mozconfig <<'MOZCONFIG'
 ac_add_options --enable-application=browser
 ac_add_options --enable-optimize
 ac_add_options --disable-debug
 ac_add_options --disable-tests
 ac_add_options --enable-release
-
-# Branding
 ac_add_options --with-branding=browser/branding/unofficial
-
-# Disable unwanted
 ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
-
-# macOS specific
 ac_add_options --target=x86_64-apple-darwin
-
-# Performance
 mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"
-EOF
+MOZCONFIG
           fi
           
           cat firefox-${VERSION}/mozconfig
@@ -344,11 +320,9 @@ EOF
           
           ./mach package
           
-          # Find and rename DMG
           DMG=$(find obj-*/dist -name "*.dmg" | head -1)
           cp "$DMG" ../firefox-custom-${VERSION}-macos.dmg
           
-          # Create checksums
           cd ..
           shasum -a 256 firefox-custom-${VERSION}-macos.dmg > \
             firefox-custom-${VERSION}-macos.dmg.sha256
@@ -386,7 +360,7 @@ EOF
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
           
-          cat > release-files/BUILD-INFO.txt <<EOF
+          cat > release-files/BUILD-INFO.txt <<BUILDINFO
           Firefox Custom Build v${VERSION}
           ================================
           
@@ -398,7 +372,7 @@ EOF
           
           Platforms:
           ----------
-EOF
+BUILDINFO
           
           if [ -f "release-files/firefox-custom-${VERSION}-linux-x86_64.tar.bz2" ]; then
             echo "✓ Linux x86_64" >> release-files/BUILD-INFO.txt
@@ -408,7 +382,7 @@ EOF
             echo "✓ macOS" >> release-files/BUILD-INFO.txt
           fi
           
-          cat >> release-files/BUILD-INFO.txt <<EOF
+          cat >> release-files/BUILD-INFO.txt <<BUILDINFO2
           
           Installation:
           -------------
@@ -434,7 +408,7 @@ EOF
           Report Issues:
           --------------
           ${{ github.server_url }}/${{ github.repository }}/issues
-EOF
+BUILDINFO2
           
           cat release-files/BUILD-INFO.txt
       
