@@ -110,17 +110,17 @@ jobs:
           if [ -f "configs/mozconfig-linux" ]; then
             cp configs/mozconfig-linux firefox-${VERSION}/mozconfig
           else
-            cat > firefox-${VERSION}/mozconfig <<'EOF'
-ac_add_options --enable-application=browser
-ac_add_options --enable-optimize
-ac_add_options --disable-debug
-ac_add_options --disable-tests
-ac_add_options --enable-release
-ac_add_options --with-branding=browser/branding/unofficial
-ac_add_options --disable-crashreporter
-ac_add_options --disable-updater
-mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
-EOF
+            cat > firefox-${VERSION}/mozconfig << 'MOZCONFIG_END'
+          ac_add_options --enable-application=browser
+          ac_add_options --enable-optimize
+          ac_add_options --disable-debug
+          ac_add_options --disable-tests
+          ac_add_options --enable-release
+          ac_add_options --with-branding=browser/branding/unofficial
+          ac_add_options --disable-crashreporter
+          ac_add_options --disable-updater
+          mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
+          MOZCONFIG_END
           fi
           cat firefox-${VERSION}/mozconfig
       
@@ -214,18 +214,18 @@ EOF
           if [ -f "configs/mozconfig-macos" ]; then
             cp configs/mozconfig-macos firefox-${VERSION}/mozconfig
           else
-            cat > firefox-${VERSION}/mozconfig <<'EOF'
-ac_add_options --enable-application=browser
-ac_add_options --enable-optimize
-ac_add_options --disable-debug
-ac_add_options --disable-tests
-ac_add_options --enable-release
-ac_add_options --with-branding=browser/branding/unofficial
-ac_add_options --disable-crashreporter
-ac_add_options --disable-updater
-ac_add_options --target=x86_64-apple-darwin
-mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"
-EOF
+            cat > firefox-${VERSION}/mozconfig << 'MOZCONFIG_END'
+          ac_add_options --enable-application=browser
+          ac_add_options --enable-optimize
+          ac_add_options --disable-debug
+          ac_add_options --disable-tests
+          ac_add_options --enable-release
+          ac_add_options --with-branding=browser/branding/unofficial
+          ac_add_options --disable-crashreporter
+          ac_add_options --disable-updater
+          ac_add_options --target=x86_64-apple-darwin
+          mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"
+          MOZCONFIG_END
           fi
           cat firefox-${VERSION}/mozconfig
       
@@ -285,12 +285,10 @@ EOF
       - name: Create build info
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
-          cat > release-files/BUILD-INFO.txt <<EOF
-          Firefox Custom Build v${VERSION}
-          Build Date: $(date -u)
-          Repository: ${{ github.repository }}
-          Commit: ${{ github.sha }}
-EOF
+          echo "Firefox Custom Build v${VERSION}" > release-files/BUILD-INFO.txt
+          echo "Build Date: $(date -u)" >> release-files/BUILD-INFO.txt
+          echo "Repository: ${{ github.repository }}" >> release-files/BUILD-INFO.txt
+          echo "Commit: ${{ github.sha }}" >> release-files/BUILD-INFO.txt
           cat release-files/BUILD-INFO.txt
       
       - name: Create GitHub Release
