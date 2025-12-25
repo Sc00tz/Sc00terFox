@@ -10,6 +10,9 @@ on:
   schedule:
     - cron: '0 2 * * 0'
 
+permissions:
+  contents: write
+
 jobs:
   determine-version:
     runs-on: ubuntu-latest
@@ -87,7 +90,7 @@ jobs:
       - name: Download Firefox source
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
-          wget -q --show-progress "https://archive.mozilla.org/pub/firefox/releases/${VERSION}/source/firefox-${VERSION}.source.tar.xz"
+          curl -L -o firefox-${VERSION}.source.tar.xz "https://archive.mozilla.org/pub/firefox/releases/${VERSION}/source/firefox-${VERSION}.source.tar.xz"
           tar -xf firefox-${VERSION}.source.tar.xz
           rm firefox-${VERSION}.source.tar.xz
       
@@ -191,7 +194,7 @@ jobs:
       - name: Download Firefox source
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
-          wget -q --show-progress "https://archive.mozilla.org/pub/firefox/releases/${VERSION}/source/firefox-${VERSION}.source.tar.xz"
+          curl -L -o firefox-${VERSION}.source.tar.xz "https://archive.mozilla.org/pub/firefox/releases/${VERSION}/source/firefox-${VERSION}.source.tar.xz"
           tar -xf firefox-${VERSION}.source.tar.xz
           rm firefox-${VERSION}.source.tar.xz
       
@@ -264,7 +267,7 @@ jobs:
 
   create-release:
     needs: [determine-version, build-linux, build-macos]
-    if: always() && needs.determine-version.outputs.should_build == 'true'
+    if: needs.determine-version.outputs.should_build == 'true' && needs.build-linux.result == 'success' && needs.build-macos.result == 'success'
     runs-on: ubuntu-latest
     
     steps:
