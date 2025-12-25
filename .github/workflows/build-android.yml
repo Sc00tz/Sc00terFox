@@ -44,6 +44,22 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/sdk
+          key: android-sdk-${{ runner.os }}
+          restore-keys: |
+            android-sdk-
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager --install "platform-tools" \
+                               "platforms;android-34" \
+                               "build-tools;34.0.0" \
+                               "ndk;26.1.10909125"
+
       - name: Free up disk space
         run: |
           echo "Before cleanup:"
@@ -69,22 +85,6 @@ jobs:
 
           echo "After cleanup:"
           df -h
-      
-      - name: Cache Android SDK
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.android/sdk
-          key: android-sdk-${{ runner.os }}
-          restore-keys: |
-            android-sdk-
-      
-      - name: Install Android SDK components
-        run: |
-          sdkmanager --install "platform-tools" \
-                               "platforms;android-34" \
-                               "build-tools;34.0.0" \
-                               "ndk;26.1.10909125"
       
       # Gradle cache removed to save disk space - Android builds are large
 
