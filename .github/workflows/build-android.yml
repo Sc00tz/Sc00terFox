@@ -49,10 +49,21 @@ jobs:
           echo "Before cleanup:"
           df -h
 
+          # Remove large packages
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/lib/node_modules
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+          # Clean apt cache
+          sudo apt-get clean
+
+          # Remove large docker images
           sudo docker image prune --all --force
+          sudo docker system prune -a --volumes --force
 
           echo "After cleanup:"
           df -h
@@ -73,16 +84,8 @@ jobs:
                                "build-tools;34.0.0" \
                                "ndk;26.1.10909125"
       
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-      
+      # Gradle cache removed to save disk space - Android builds are large
+
       - name: Cache mozbuild
         uses: actions/cache@v4
         with:
@@ -180,11 +183,28 @@ jobs:
         run: |
           cd mozilla-central
           export MOZBUILD_STATE_PATH=$HOME/.mozbuild
-          
+
           echo "Building GeckoView at $(date)"
           ./mach build
           echo "GeckoView build complete at $(date)"
-      
+
+      - name: Clean up after GeckoView build
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+
+          # Remove intermediate build files
+          cd mozilla-central
+          find obj-* -name "*.o" -delete
+          find obj-* -name "*.a" -delete
+
+          # Clean up apt cache and docker again
+          sudo apt-get clean
+          sudo docker system prune -f
+
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Build Fenix APK
         run: |
           cd mozilla-central/mobile/android/fenix
