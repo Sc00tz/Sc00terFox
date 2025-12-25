@@ -47,133 +47,134 @@ jobs:
             echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
-  build-linux:
-    needs: determine-version
-    if: needs.determine-version.outputs.should_build == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Free up disk space
-        run: |
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
-          df -h
-      
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mercurial build-essential libgtk-3-dev libdbus-glib-1-dev libpulse-dev libxt-dev autoconf2.13 yasm nasm libx11-xcb-dev nodejs clang llvm rustc cargo cbindgen
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Cache mozbuild
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.mozbuild
-            ~/.cargo
-          key: mozbuild-linux-${{ needs.determine-version.outputs.version }}
-          restore-keys: |
-            mozbuild-linux-
-      
-      - name: Download Firefox source
-        run: |
-          VERSION="${{ needs.determine-version.outputs.version }}"
-          curl -L -o firefox-${VERSION}.source.tar.xz "https://archive.mozilla.org/pub/firefox/releases/${VERSION}/source/firefox-${VERSION}.source.tar.xz"
-          tar -xf firefox-${VERSION}.source.tar.xz
-          rm firefox-${VERSION}.source.tar.xz
-      
-      - name: Apply patches
-        run: |
-          VERSION="${{ needs.determine-version.outputs.version }}"
-          cd firefox-${VERSION}
-          if [ -d "../patches/desktop" ] && [ "$(ls -A ../patches/desktop/*.patch 2>/dev/null)" ]; then
-            for patch in ../patches/desktop/*.patch; do
-              echo "Applying $(basename $patch)..."
-              patch -p1 < "$patch"
-            done
-          else
-            echo "No patches found"
-          fi
-      
-      - name: Setup mozconfig
-        run: |
-          VERSION="${{ needs.determine-version.outputs.version }}"
-          if [ -f "configs/mozconfig-linux" ]; then
-            cp configs/mozconfig-linux firefox-${VERSION}/mozconfig
-          else
-            cat > firefox-${VERSION}/mozconfig << 'MOZCONFIG_END'
-          ac_add_options --enable-application=browser
-          ac_add_options --enable-optimize
-          ac_add_options --disable-debug
-          ac_add_options --disable-tests
-          ac_add_options --enable-release
-          ac_add_options --with-branding=browser/branding/unofficial
-          ac_add_options --disable-crashreporter
-          ac_add_options --disable-updater
-          mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
-          MOZCONFIG_END
-          fi
-          cat firefox-${VERSION}/mozconfig
-      
-      - name: Bootstrap build environment
-        run: |
-          VERSION="${{ needs.determine-version.outputs.version }}"
-          cd firefox-${VERSION}
-          export MOZBUILD_STATE_PATH=$HOME/.mozbuild
-          ./mach --no-interactive bootstrap --application-choice=browser
-      
-      - name: Build Firefox
-        run: |
-          VERSION="${{ needs.determine-version.outputs.version }}"
-          cd firefox-${VERSION}
-          export MOZBUILD_STATE_PATH=$HOME/.mozbuild
-          ./mach build
-      
-      - name: Package Firefox
-        run: |
-          VERSION="${{ needs.determine-version.outputs.version }}"
-          cd firefox-${VERSION}
-          ./mach package
-
-          # Debug: show what files were created
-          echo "Contents of obj-*/dist:"
-          ls -la obj-*/dist/ || true
-
-          # Find the package - try multiple patterns
-          PACKAGE=$(find obj-*/dist -name "firefox-*.tar.bz2" -o -name "*.tar.bz2" | grep -v "crashreporter" | head -1)
-
-          if [ -z "$PACKAGE" ]; then
-            echo "ERROR: No package file found!"
-            echo "Searching for any .tar.bz2 files:"
-            find obj-*/dist -name "*.tar.bz2"
-            exit 1
-          fi
-
-          echo "Found package: $PACKAGE"
-          cp "$PACKAGE" ../firefox-custom-${VERSION}-linux-x86_64.tar.bz2
-          cd ..
-          sha256sum firefox-custom-${VERSION}-linux-x86_64.tar.bz2 > firefox-custom-${VERSION}-linux-x86_64.tar.bz2.sha256
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: firefox-linux-${{ needs.determine-version.outputs.version }}
-          path: |
-            firefox-custom-*.tar.bz2
-            firefox-custom-*.sha256
-          retention-days: 7
+  # Linux build disabled - not currently needed
+  # build-linux:
+  #   needs: determine-version
+  #   if: needs.determine-version.outputs.should_build == 'true'
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 360
+  #
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Free up disk space
+  #       run: |
+  #         df -h
+  #         sudo rm -rf /usr/share/dotnet
+  #         sudo rm -rf /usr/local/lib/android
+  #         sudo rm -rf /opt/ghc
+  #         sudo rm -rf /opt/hostedtoolcache/CodeQL
+  #         sudo docker image prune --all --force
+  #         df -h
+  #
+  #     - name: Install build dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y mercurial build-essential libgtk-3-dev libdbus-glib-1-dev libpulse-dev libxt-dev autoconf2.13 yasm nasm libx11-xcb-dev nodejs clang llvm rustc cargo cbindgen
+  #
+  #     - name: Setup Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.11'
+  #
+  #     - name: Cache mozbuild
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.mozbuild
+  #           ~/.cargo
+  #         key: mozbuild-linux-${{ needs.determine-version.outputs.version }}
+  #         restore-keys: |
+  #           mozbuild-linux-
+  #
+  #     - name: Download Firefox source
+  #       run: |
+  #         VERSION="${{ needs.determine-version.outputs.version }}"
+  #         curl -L -o firefox-${VERSION}.source.tar.xz "https://archive.mozilla.org/pub/firefox/releases/${VERSION}/source/firefox-${VERSION}.source.tar.xz"
+  #         tar -xf firefox-${VERSION}.source.tar.xz
+  #         rm firefox-${VERSION}.source.tar.xz
+  #
+  #     - name: Apply patches
+  #       run: |
+  #         VERSION="${{ needs.determine-version.outputs.version }}"
+  #         cd firefox-${VERSION}
+  #         if [ -d "../patches/desktop" ] && [ "$(ls -A ../patches/desktop/*.patch 2>/dev/null)" ]; then
+  #           for patch in ../patches/desktop/*.patch; do
+  #             echo "Applying $(basename $patch)..."
+  #             patch -p1 < "$patch"
+  #           done
+  #         else
+  #           echo "No patches found"
+  #         fi
+  #
+  #     - name: Setup mozconfig
+  #       run: |
+  #         VERSION="${{ needs.determine-version.outputs.version }}"
+  #         if [ -f "configs/mozconfig-linux" ]; then
+  #           cp configs/mozconfig-linux firefox-${VERSION}/mozconfig
+  #         else
+  #           cat > firefox-${VERSION}/mozconfig << 'MOZCONFIG_END'
+  #         ac_add_options --enable-application=browser
+  #         ac_add_options --enable-optimize
+  #         ac_add_options --disable-debug
+  #         ac_add_options --disable-tests
+  #         ac_add_options --enable-release
+  #         ac_add_options --with-branding=browser/branding/unofficial
+  #         ac_add_options --disable-crashreporter
+  #         ac_add_options --disable-updater
+  #         mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
+  #         MOZCONFIG_END
+  #         fi
+  #         cat firefox-${VERSION}/mozconfig
+  #
+  #     - name: Bootstrap build environment
+  #       run: |
+  #         VERSION="${{ needs.determine-version.outputs.version }}"
+  #         cd firefox-${VERSION}
+  #         export MOZBUILD_STATE_PATH=$HOME/.mozbuild
+  #         ./mach --no-interactive bootstrap --application-choice=browser
+  #
+  #     - name: Build Firefox
+  #       run: |
+  #         VERSION="${{ needs.determine-version.outputs.version }}"
+  #         cd firefox-${VERSION}
+  #         export MOZBUILD_STATE_PATH=$HOME/.mozbuild
+  #         ./mach build
+  #
+  #     - name: Package Firefox
+  #       run: |
+  #         VERSION="${{ needs.determine-version.outputs.version }}"
+  #         cd firefox-${VERSION}
+  #         ./mach package
+  #
+  #         # Debug: show what files were created
+  #         echo "Contents of obj-*/dist:"
+  #         ls -la obj-*/dist/ || true
+  #
+  #         # Find the package - try multiple patterns
+  #         PACKAGE=$(find obj-*/dist -name "firefox-*.tar.bz2" -o -name "*.tar.bz2" | grep -v "crashreporter" | head -1)
+  #
+  #         if [ -z "$PACKAGE" ]; then
+  #           echo "ERROR: No package file found!"
+  #           echo "Searching for any .tar.bz2 files:"
+  #           find obj-*/dist -name "*.tar.bz2"
+  #           exit 1
+  #         fi
+  #
+  #         echo "Found package: $PACKAGE"
+  #         cp "$PACKAGE" ../firefox-custom-${VERSION}-linux-x86_64.tar.bz2
+  #         cd ..
+  #         sha256sum firefox-custom-${VERSION}-linux-x86_64.tar.bz2 > firefox-custom-${VERSION}-linux-x86_64.tar.bz2.sha256
+  #
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: firefox-linux-${{ needs.determine-version.outputs.version }}
+  #         path: |
+  #           firefox-custom-*.tar.bz2
+  #           firefox-custom-*.sha256
+  #         retention-days: 7
 
   build-macos:
     needs: determine-version
@@ -300,8 +301,8 @@ jobs:
           retention-days: 7
 
   create-release:
-    needs: [determine-version, build-linux, build-macos]
-    if: needs.determine-version.outputs.should_build == 'true' && needs.build-linux.result == 'success' && needs.build-macos.result == 'success'
+    needs: [determine-version, build-macos]
+    if: needs.determine-version.outputs.should_build == 'true' && needs.build-macos.result == 'success'
     runs-on: ubuntu-latest
     
     steps:
