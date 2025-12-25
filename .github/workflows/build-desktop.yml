@@ -70,7 +70,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y mercurial python3-pip build-essential libgtk-3-dev libdbus-glib-1-dev libpulse-dev libxt-dev autoconf2.13 yasm nasm libx11-xcb-dev nodejs clang llvm rustc cargo cbindgen
+          sudo apt-get install -y mercurial build-essential libgtk-3-dev libdbus-glib-1-dev libpulse-dev libxt-dev autoconf2.13 yasm nasm libx11-xcb-dev nodejs clang llvm rustc cargo cbindgen
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -163,9 +163,18 @@ jobs:
   build-macos:
     needs: determine-version
     if: needs.determine-version.outputs.should_build == 'true'
-    runs-on: macos-13
+    strategy:
+      matrix:
+        include:
+          - runner: macos-13
+            arch: x86_64
+            target: x86_64-apple-darwin
+          - runner: macos-14
+            arch: arm64
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 360
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -187,9 +196,9 @@ jobs:
           path: |
             ~/.mozbuild
             ~/.cargo
-          key: mozbuild-macos-${{ needs.determine-version.outputs.version }}
+          key: mozbuild-macos-${{ matrix.arch }}-${{ needs.determine-version.outputs.version }}
           restore-keys: |
-            mozbuild-macos-
+            mozbuild-macos-${{ matrix.arch }}-
       
       - name: Download Firefox source
         run: |
@@ -216,6 +225,10 @@ jobs:
           VERSION="${{ needs.determine-version.outputs.version }}"
           if [ -f "configs/mozconfig-macos" ]; then
             cp configs/mozconfig-macos firefox-${VERSION}/mozconfig
+            # Update target architecture if needed
+            if grep -q "target=x86_64-apple-darwin" firefox-${VERSION}/mozconfig; then
+              sed -i '' "s/target=x86_64-apple-darwin/target=${{ matrix.target }}/" firefox-${VERSION}/mozconfig
+            fi
           else
             cat > firefox-${VERSION}/mozconfig << 'MOZCONFIG_END'
           ac_add_options --enable-application=browser
@@ -226,7 +239,7 @@ jobs:
           ac_add_options --with-branding=browser/branding/unofficial
           ac_add_options --disable-crashreporter
           ac_add_options --disable-updater
-          ac_add_options --target=x86_64-apple-darwin
+          ac_add_options --target=${{ matrix.target }}
           mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"
           MOZCONFIG_END
           fi
@@ -249,20 +262,21 @@ jobs:
       - name: Package Firefox
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
+          ARCH="${{ matrix.arch }}"
           cd firefox-${VERSION}
           ./mach package
           DMG=$(find obj-*/dist -name "*.dmg" | head -1)
-          cp "$DMG" ../firefox-custom-${VERSION}-macos.dmg
+          cp "$DMG" ../firefox-custom-${VERSION}-macos-${ARCH}.dmg
           cd ..
-          shasum -a 256 firefox-custom-${VERSION}-macos.dmg > firefox-custom-${VERSION}-macos.dmg.sha256
-      
+          shasum -a 256 firefox-custom-${VERSION}-macos-${ARCH}.dmg > firefox-custom-${VERSION}-macos-${ARCH}.dmg.sha256
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firefox-macos-${{ needs.determine-version.outputs.version }}
+          name: firefox-macos-${{ matrix.arch }}-${{ needs.determine-version.outputs.version }}
           path: |
-            firefox-custom-*.dmg
-            firefox-custom-*.sha256
+            firefox-custom-*-macos-${{ matrix.arch }}.dmg
+            firefox-custom-*-macos-${{ matrix.arch }}.dmg.sha256
           retention-days: 7
 
   create-release:

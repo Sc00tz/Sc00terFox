@@ -107,13 +107,23 @@ jobs:
             nodejs
       
       - name: Clone mozilla-central
+        id: clone
         run: |
           echo "Cloning mozilla-central..."
           git clone --depth 1 --single-branch --branch master \
             https://github.com/mozilla/gecko-dev.git mozilla-central
-          
+
           cd mozilla-central
           git log -1 --oneline
+
+          # Extract Firefox version from browser/config/version.txt
+          if [ -f "browser/config/version.txt" ]; then
+            VERSION=$(cat browser/config/version.txt)
+            echo "firefox_version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Firefox version: $VERSION"
+          else
+            echo "firefox_version=unknown" >> $GITHUB_OUTPUT
+          fi
       
       - name: Apply patches
         run: |
@@ -179,29 +189,31 @@ jobs:
       - name: Build Fenix APK
         run: |
           cd mozilla-central/mobile/android/fenix
-          
+
+          VERSION="${{ steps.clone.outputs.firefox_version }}"
+
           # Configure for debug or release
           if [ "${{ env.BUILD_TYPE }}" = "release" ]; then
             echo "autosignReleaseWithDebugKey=true" > local.properties
             ./gradlew assembleRelease
-            
+
             APK_DIR="app/build/outputs/apk/fenix/release"
             APK_PATTERN="*-release.apk"
-            OUTPUT_NAME="firefox-custom-android-release.apk"
+            OUTPUT_NAME="firefox-custom-${VERSION}-android-release.apk"
           else
             ./gradlew assembleDebug
-            
+
             APK_DIR="app/build/outputs/apk/fenix/debug"
             APK_PATTERN="*-debug.apk"
-            OUTPUT_NAME="firefox-custom-android-debug.apk"
+            OUTPUT_NAME="firefox-custom-${VERSION}-android-debug.apk"
           fi
-          
+
           # Find and copy APK
           find "$APK_DIR" -name "$APK_PATTERN" -exec cp {} ../../../../$OUTPUT_NAME \;
-          
+
           cd ../../../..
           ls -lh *.apk
-          
+
           # Create checksum
           sha256sum $OUTPUT_NAME > ${OUTPUT_NAME}.sha256
       
@@ -218,23 +230,24 @@ jobs:
         if: env.BUILD_TYPE == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-${{ github.run_number }}
-          name: Firefox Android Custom Build ${{ github.run_number }}
+          tag_name: android-v${{ steps.clone.outputs.firefox_version }}
+          name: Firefox Android Custom v${{ steps.clone.outputs.firefox_version }}
           body: |
             Firefox Android Custom Build
-            
-            Build Type: ${{ env.BUILD_TYPE }}
-            Build Date: ${{ github.event.repository.updated_at }}
-            
+
+            **Version:** ${{ steps.clone.outputs.firefox_version }}
+            **Build Type:** ${{ env.BUILD_TYPE }}
+            **Build Date:** ${{ github.event.repository.updated_at }}
+
             **Installation:**
             1. Enable "Unknown sources" in Android settings
             2. Download and install APK
             3. Settings → About → Tap logo 5 times
             4. Configure custom FxA servers
-            
+
             **Note:** Debug-signed for testing
           files: |
-            firefox-custom-android-*.apk
-            firefox-custom-android-*.sha256
+            firefox-custom-*-android-*.apk
+            firefox-custom-*-android-*.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
