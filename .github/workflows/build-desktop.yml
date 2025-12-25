@@ -178,16 +178,7 @@ jobs:
   build-macos:
     needs: determine-version
     if: needs.determine-version.outputs.should_build == 'true'
-    strategy:
-      matrix:
-        include:
-          - runner: macos-13
-            arch: x86_64
-            target: x86_64-apple-darwin
-          - runner: macos-14
-            arch: arm64
-            target: aarch64-apple-darwin
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-14
     timeout-minutes: 360
 
     steps:
@@ -211,9 +202,9 @@ jobs:
           path: |
             ~/.mozbuild
             ~/.cargo
-          key: mozbuild-macos-${{ matrix.arch }}-${{ needs.determine-version.outputs.version }}
+          key: mozbuild-macos-arm64-${{ needs.determine-version.outputs.version }}
           restore-keys: |
-            mozbuild-macos-${{ matrix.arch }}-
+            mozbuild-macos-arm64-
       
       - name: Download Firefox source
         run: |
@@ -240,9 +231,9 @@ jobs:
           VERSION="${{ needs.determine-version.outputs.version }}"
           if [ -f "configs/mozconfig-macos" ]; then
             cp configs/mozconfig-macos firefox-${VERSION}/mozconfig
-            # Update target architecture if needed
+            # Update target architecture to ARM64 if needed
             if grep -q "target=x86_64-apple-darwin" firefox-${VERSION}/mozconfig; then
-              sed -i '' "s/target=x86_64-apple-darwin/target=${{ matrix.target }}/" firefox-${VERSION}/mozconfig
+              sed -i '' "s/target=x86_64-apple-darwin/target=aarch64-apple-darwin/" firefox-${VERSION}/mozconfig
             fi
           else
             cat > firefox-${VERSION}/mozconfig << 'MOZCONFIG_END'
@@ -254,7 +245,7 @@ jobs:
           ac_add_options --with-branding=browser/branding/unofficial
           ac_add_options --disable-crashreporter
           ac_add_options --disable-updater
-          ac_add_options --target=${{ matrix.target }}
+          ac_add_options --target=aarch64-apple-darwin
           mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"
           MOZCONFIG_END
           fi
@@ -277,7 +268,6 @@ jobs:
       - name: Package Firefox
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
-          ARCH="${{ matrix.arch }}"
           cd firefox-${VERSION}
           ./mach package
 
@@ -296,17 +286,17 @@ jobs:
           fi
 
           echo "Found DMG: $DMG"
-          cp "$DMG" ../firefox-custom-${VERSION}-macos-${ARCH}.dmg
+          cp "$DMG" ../firefox-custom-${VERSION}-macos-arm64.dmg
           cd ..
-          shasum -a 256 firefox-custom-${VERSION}-macos-${ARCH}.dmg > firefox-custom-${VERSION}-macos-${ARCH}.dmg.sha256
+          shasum -a 256 firefox-custom-${VERSION}-macos-arm64.dmg > firefox-custom-${VERSION}-macos-arm64.dmg.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firefox-macos-${{ matrix.arch }}-${{ needs.determine-version.outputs.version }}
+          name: firefox-macos-${{ needs.determine-version.outputs.version }}
           path: |
-            firefox-custom-*-macos-${{ matrix.arch }}.dmg
-            firefox-custom-*-macos-${{ matrix.arch }}.dmg.sha256
+            firefox-custom-*-macos-*.dmg
+            firefox-custom-*-macos-*.dmg.sha256
           retention-days: 7
 
   create-release:
