@@ -132,28 +132,28 @@ jobs:
             cp configs/mozconfig-android mozilla-central/mozconfig
           else
             cat > mozilla-central/mozconfig <<'EOF'
-# Build Firefox for Android
-ac_add_options --enable-application=mobile/android
-ac_add_options --target=aarch64-linux-android
+          # Build Firefox for Android
+          ac_add_options --enable-application=mobile/android
+          ac_add_options --target=aarch64-linux-android
 
-# Optimization
-ac_add_options --enable-optimize
-ac_add_options --disable-debug
-ac_add_options --disable-tests
+          # Optimization
+          ac_add_options --enable-optimize
+          ac_add_options --disable-debug
+          ac_add_options --disable-tests
 
-# Android SDK/NDK
-ac_add_options --with-android-ndk="$ANDROID_NDK_HOME"
-ac_add_options --with-android-sdk="$ANDROID_HOME"
+          # Android SDK/NDK
+          ac_add_options --with-android-ndk="$ANDROID_NDK_HOME"
+          ac_add_options --with-android-sdk="$ANDROID_HOME"
 
-# Branding
-ac_add_options --with-branding=mobile/android/branding/unofficial
+          # Branding
+          ac_add_options --with-branding=mobile/android/branding/unofficial
 
-# Disable unwanted
-ac_add_options --disable-crashreporter
-ac_add_options --disable-updater
+          # Disable unwanted
+          ac_add_options --disable-crashreporter
+          ac_add_options --disable-updater
 
-mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
-EOF
+          mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
+          EOF
           fi
           
           cat mozilla-central/mozconfig
