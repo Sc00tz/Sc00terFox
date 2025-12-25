@@ -146,7 +146,22 @@ jobs:
           VERSION="${{ needs.determine-version.outputs.version }}"
           cd firefox-${VERSION}
           ./mach package
-          PACKAGE=$(find obj-*/dist -name "firefox-*.tar.bz2" | head -1)
+
+          # Debug: show what files were created
+          echo "Contents of obj-*/dist:"
+          ls -la obj-*/dist/ || true
+
+          # Find the package - try multiple patterns
+          PACKAGE=$(find obj-*/dist -name "firefox-*.tar.bz2" -o -name "*.tar.bz2" | grep -v "crashreporter" | head -1)
+
+          if [ -z "$PACKAGE" ]; then
+            echo "ERROR: No package file found!"
+            echo "Searching for any .tar.bz2 files:"
+            find obj-*/dist -name "*.tar.bz2"
+            exit 1
+          fi
+
+          echo "Found package: $PACKAGE"
           cp "$PACKAGE" ../firefox-custom-${VERSION}-linux-x86_64.tar.bz2
           cd ..
           sha256sum firefox-custom-${VERSION}-linux-x86_64.tar.bz2 > firefox-custom-${VERSION}-linux-x86_64.tar.bz2.sha256
@@ -265,7 +280,22 @@ jobs:
           ARCH="${{ matrix.arch }}"
           cd firefox-${VERSION}
           ./mach package
+
+          # Debug: show what files were created
+          echo "Contents of obj-*/dist:"
+          ls -la obj-*/dist/ || true
+
+          # Find the DMG package
           DMG=$(find obj-*/dist -name "*.dmg" | head -1)
+
+          if [ -z "$DMG" ]; then
+            echo "ERROR: No DMG file found!"
+            echo "Searching for all files in dist:"
+            find obj-*/dist -type f
+            exit 1
+          fi
+
+          echo "Found DMG: $DMG"
           cp "$DMG" ../firefox-custom-${VERSION}-macos-${ARCH}.dmg
           cd ..
           shasum -a 256 firefox-custom-${VERSION}-macos-${ARCH}.dmg > firefox-custom-${VERSION}-macos-${ARCH}.dmg.sha256
