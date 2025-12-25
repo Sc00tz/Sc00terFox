@@ -55,10 +55,11 @@ jobs:
 
       - name: Install Android SDK components
         run: |
+          # Install specific NDK version r28b as required by Firefox
           sdkmanager --install "platform-tools" \
                                "platforms;android-34" \
                                "build-tools;34.0.0" \
-                               "ndk;26.1.10909125"
+                               "ndk;28.0.12433566"
 
       - name: Free up disk space
         run: |
