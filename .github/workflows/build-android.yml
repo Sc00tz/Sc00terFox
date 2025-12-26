@@ -133,7 +133,7 @@ jobs:
       - name: Apply patches
         run: |
           cd mozilla-central
-          
+
           if [ -d "../patches/android" ] && [ "$(ls -A ../patches/android/*.patch 2>/dev/null)" ]; then
             echo "Applying Android patches..."
             for patch in ../patches/android/*.patch; do
@@ -143,7 +143,21 @@ jobs:
           else
             echo "No Android patches found"
           fi
-      
+
+      - name: Copy custom preferences
+        run: |
+          cd mozilla-central
+
+          # Copy custom prefs to GeckoView defaults
+          if [ -f "../configs/android-prefs.js" ]; then
+            echo "Copying custom Android preferences..."
+            mkdir -p mobile/android/app/src/main/assets
+            cp ../configs/android-prefs.js mobile/android/app/src/main/assets/geckoview-prefs.js
+            echo "Custom preferences installed"
+          else
+            echo "No custom preferences file found"
+          fi
+
       - name: Setup mozconfig
         run: |
           if [ -f "configs/mozconfig-android" ]; then
