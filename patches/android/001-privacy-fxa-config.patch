@@ -1,8 +1,9 @@
-diff --git a/mobile/android/app/mobile.js b/mobile/android/app/mobile.js
-index 1234567..abcdefg 100644
---- a/mobile/android/app/mobile.js
-+++ b/mobile/android/app/mobile.js
-@@ -1,3 +1,130 @@
+diff --git a/mobile/android/app/geckoview-prefs.js b/mobile/android/app/geckoview-prefs.js
+new file mode 100644
+index 0000000000..1111111111
+--- /dev/null
++++ b/mobile/android/app/geckoview-prefs.js
+@@ -0,0 +1,128 @@
 +// ========================================
 +// Sc00terFox Custom Firefox Android Configuration
 +// Based on LibreWolf privacy settings
@@ -132,5 +133,15 @@ index 1234567..abcdefg 100644
 +// PREF: Session & History
 +pref("browser.sessionstore.privacy_level", 2);
 +pref("browser.formfill.enable", false);
-+
- #filter substitution
+diff --git a/mobile/android/installer/package-manifest.in b/mobile/android/installer/package-manifest.in
+index 2222222222..3333333333 100644
+--- a/mobile/android/installer/package-manifest.in
++++ b/mobile/android/installer/package-manifest.in
+@@ -5,6 +5,7 @@
+ ; Package file for the Firefox Android build.
+
+ ; [Base Files]
++@BINPATH@/geckoview-prefs.js
+ @BINPATH@/application.ini
+ @BINPATH@/@DLL_PREFIX@mozglue@DLL_SUFFIX@
+ #ifndef MOZ_STATIC_JS
