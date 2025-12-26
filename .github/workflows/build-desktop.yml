@@ -7,6 +7,11 @@ on:
         description: 'Firefox version (e.g., 132.0 or latest)'
         required: false
         default: 'latest'
+      force_build:
+        description: 'Force build even if release exists'
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: '0 2 * * 0'
 
@@ -41,6 +46,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
+
+          # Force build if requested
+          if [ "${{ inputs.force_build }}" = "true" ]; then
+            echo "Force build requested, skipping version check"
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already exists
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "should_build=false" >> $GITHUB_OUTPUT
           else
