@@ -84,9 +84,26 @@ jobs:
           sudo rm -rf /usr/share/swift
           sudo rm -rf /usr/local/lib/node_modules
           sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/graalvm
+          sudo rm -rf /usr/local/.ghcup
+
+          # Remove Android components we don't need
+          sudo rm -rf /usr/local/lib/android/sdk/ndk-bundle || true
+          sudo rm -rf /usr/local/lib/android/sdk/emulator || true
+          sudo rm -rf /usr/local/lib/android/sdk/system-images || true
+
+          # Remove large documentation and sample files
+          sudo rm -rf /usr/share/doc
+          sudo rm -rf /usr/share/man
+          sudo rm -rf /usr/share/locale
+
+          # Remove other toolchains
+          sudo rm -rf /opt/az
+          sudo rm -rf /opt/microsoft
 
           # Clean apt cache
           sudo apt-get clean
+          sudo apt-get autoremove -y
 
           # Remove large docker images
           sudo docker image prune --all --force
@@ -195,7 +212,8 @@ jobs:
           ac_add_options --disable-crashreporter
           ac_add_options --disable-updater
 
-          mk_add_options MOZ_MAKE_FLAGS="-j\$(nproc)"
+          # Use fewer parallel jobs to reduce disk usage (default is 4 cores on GitHub Actions)
+          mk_add_options MOZ_MAKE_FLAGS="-j2"
           EOF
           fi
 
@@ -207,7 +225,23 @@ jobs:
           cd mozilla-central
           export MOZBUILD_STATE_PATH=$HOME/.mozbuild
           ./mach --no-interactive bootstrap --application-choice=mobile_android
-      
+
+      - name: Pre-build disk cleanup
+        run: |
+          echo "Disk space before pre-build cleanup:"
+          df -h
+
+          # Remove Rust documentation and examples to save space
+          rm -rf ~/.rustup/toolchains/*/share/doc || true
+          rm -rf ~/.cargo/registry/cache || true
+
+          # Clean any temporary files
+          sudo rm -rf /tmp/*
+          sudo rm -rf /var/tmp/*
+
+          echo "Disk space after pre-build cleanup:"
+          df -h
+
       - name: Build GeckoView
         run: |
           cd mozilla-central
