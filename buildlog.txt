@@ -1,0 +1,84 @@
+15:49.06    Compiling osclientcerts v0.1.4 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/security/manager/ssl/osclientcerts)
+15:51.26    Compiling oblivious_http v0.1.0 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/netwerk/protocol/http/oblivious_http)
+15:52.08    Compiling http_sfv v0.1.0 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/netwerk/base/http-sfv)
+15:53.74    Compiling data-encoding-ffi v0.1.0 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/dom/fs/parent/rust/data-encoding-ffi)
+15:53.82    Compiling mapped_hyph v0.4.3 (https://github.com/jfkthame/mapped_hyph.git?rev=eff105f6ad7ec9b79816cfc1985a28e5340ad14b#eff105f6)
+15:55.62    Compiling storage v0.1.0 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/storage/rust)
+15:55.73 warning: hiding a lifetime that's elided elsewhere is confusing
+15:55.73   --> storage/rust/src/lib.rs:95:35
+15:55.73    |
+15:55.73 95 |     pub fn prepare<Q: AsRef<str>>(&self, query: Q) -> Result<Statement> {
+15:55.73    |                                   ^^^^^                      ^^^^^^^^^ the same lifetime is hidden here
+15:55.73    |                                   |
+15:55.73    |                                   the lifetime is elided here
+15:55.73    |
+15:55.73    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+15:55.73    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+15:55.73 help: use `'_` for type paths
+15:55.73    |
+15:55.73 95 |     pub fn prepare<Q: AsRef<str>>(&self, query: Q) -> Result<Statement<'_>> {
+15:55.73    |                                                                       ++++
+15:55.73 warning: hiding a lifetime that's elided elsewhere is confusing
+15:55.73    --> storage/rust/src/lib.rs:123:24
+15:55.73     |
+15:55.73 123 |     pub fn transaction(&mut self) -> Result<Transaction> {
+15:55.73     |                        ^^^^^^^^^            ^^^^^^^^^^^ the same lifetime is hidden here
+15:55.73     |                        |
+15:55.73     |                        the lifetime is elided here
+15:55.73     |
+15:55.73     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+15:55.73 help: use `'_` for type paths
+15:55.73     |
+15:55.73 123 |     pub fn transaction(&mut self) -> Result<Transaction<'_>> {
+15:55.73     |                                                        ++++
+15:55.73 warning: hiding a lifetime that's elided elsewhere is confusing
+15:55.73    --> storage/rust/src/lib.rs:145:9
+15:55.73     |
+15:55.73 145 |         &mut self,
+15:55.73     |         ^^^^^^^^^ the lifetime is elided here
+15:55.73 146 |         behavior: TransactionBehavior,
+15:55.73 147 |     ) -> Result<Transaction> {
+15:55.73     |                 ^^^^^^^^^^^ the same lifetime is hidden here
+15:55.73     |
+15:55.73     = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+15:55.73 help: use `'_` for type paths
+15:55.73     |
+15:55.73 147 |     ) -> Result<Transaction<'_>> {
+15:55.73     |                            ++++
+15:55.90    Compiling jog v0.1.0 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/toolkit/components/glean/bindings/jog)
+15:55.91 warning: `storage` (lib) generated 3 warnings (run `cargo fix --lib -p storage` to apply 3 suggestions)
+15:55.91    Compiling data_storage v0.0.1 (/home/runner/work/Sc00terFox/Sc00terFox/mozilla-central/security/manager/ssl/data_storage)
+90:21.29 third_party/libwebrtc/modules/audio_processing/agc/level_estimation_gn
+90:21.41 third_party/libwebrtc/modules/audio_processing/agc2/adaptive_digital_gain_controller_gn
+90:22.09 third_party/libwebrtc/modules/audio_processing/agc2/biquad_filter_gn
+90:22.41 third_party/libwebrtc/modules/audio_processing/agc2/clipping_predictor_gn
+90:22.81 third_party/libwebrtc/modules/audio_processing/agc2/cpu_features_gn
+90:23.54 third_party/libwebrtc/modules/audio_processing/agc2/fixed_digital_gn
+90:23.59 third_party/libwebrtc/modules/audio_processing/agc2/gain_applier_gn
+90:24.33 third_party/libwebrtc/modules/audio_processing/agc2/input_volume_controller_gn
+90:24.63 third_party/libwebrtc/modules/audio_processing/agc2/input_volume_stats_reporter_gn
+90:25.53 third_party/libwebrtc/modules/audio_processing/agc2/noise_level_estimator_gn
+90:25.58 third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/rnn_vad_auto_correlation_gn
+90:26.33 third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/rnn_vad_gn
+90:26.34 third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/rnn_vad_layers_gn
+90:27.33 third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/rnn_vad_lp_residual_gn
+90:27.45 third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/rnn_vad_pitch_gn
+90:28.12 third_party/libwebrtc/modules/audio_processing/agc2/rnn_vad/rnn_vad_spectral_features_gn
+90:28.55 third_party/libwebrtc/modules/audio_processing/agc2/saturation_protector_gn
+90:29.09 third_party/libwebrtc/modules/audio_processing/agc2/speech_level_estimator_gn
+90:29.37 third_party/libwebrtc/modules/audio_processing/agc2/vad_wrapper_gn
+90:30.04 third_party/libwebrtc/modules/audio_processing/apm_logging_gn
+90:30.37 third_party/libwebrtc/modules/audio_processing/audio_buffer_gn
+90:31.10 third_party/libwebrtc/modules/audio_processing/audio_frame_proxies_gn
+90:31.67 third_party/libwebrtc/modules/audio_processing/audio_processing_gn
+90:33.23 third_party/libwebrtc/modules/audio_processing/capture_levels_adjuster/capture_levels_adjuster_gn
+90:34.10 third_party/libwebrtc/modules/audio_processing/gain_controller2_gn
+90:35.04 third_party/libwebrtc/modules/audio_processing/high_pass_filter_gn
+90:35.33 third_party/libwebrtc/modules/audio_processing/ns/ns_gn
+90:36.01 third_party/libwebrtc/modules/audio_processing/rms_level_gn
+90:36.69 third_party/libwebrtc/modules/audio_processing/utility/cascaded_biquad_filter_gn
+90:36.77 third_party/libwebrtc/modules/audio_processing/utility/legacy_delay_estimator_gn
+90:37.59 third_party/libwebrtc/modules/audio_processing/utility/pffft_wrapper_gn
+90:37.61 third_party/libwebrtc/modules/audio_processing/vad/vad_gn
+90:38.34 third_party/libwebrtc/modules/congestion_controller/congestion_controller_gn
+90:38.63 third_party/libwebrtc/modules/congestion_controller/goog_cc/alr_detector_gn

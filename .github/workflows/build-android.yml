@@ -223,6 +223,9 @@ jobs:
           ac_add_options --disable-crashreporter
           ac_add_options --disable-updater
 
+          # Disable debug symbols to save massive amounts of disk space
+          ac_add_options --disable-debug-symbols
+
           # Use fewer parallel jobs to reduce disk usage (default is 4 cores on GitHub Actions)
           mk_add_options MOZ_MAKE_FLAGS="-j2"
           EOF
@@ -258,9 +261,52 @@ jobs:
           cd mozilla-central
           export MOZBUILD_STATE_PATH=$HOME/.mozbuild
 
+          # Reduce Rust debug info to save disk space
+          export RUSTFLAGS="-C debuginfo=0"
+
+          echo "Starting disk space:"
+          df -h
+
           echo "Building GeckoView at $(date)"
-          ./mach build
+
+          # Run build in background and monitor disk space
+          ./mach build &
+          BUILD_PID=$!
+
+          # Monitor and cleanup during build
+          while kill -0 $BUILD_PID 2>/dev/null; do
+            sleep 300  # Check every 5 minutes
+
+            DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+            echo "Disk usage: ${DISK_USAGE}%"
+
+            # If disk usage > 85%, clean up aggressively
+            if [ $DISK_USAGE -gt 85 ]; then
+              echo "WARNING: Disk usage high, cleaning up..."
+
+              # Clean cargo build artifacts
+              find . -type d -name target -exec rm -rf {}/debug \; 2>/dev/null || true
+              find . -type f -name "*.rlib" -delete 2>/dev/null || true
+
+              # Clean temporary files
+              sudo rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
+
+              # Clean more caches
+              rm -rf ~/.cargo/registry/src 2>/dev/null || true
+
+              df -h
+            fi
+          done
+
+          # Wait for build to complete and get exit code
+          wait $BUILD_PID
+          BUILD_EXIT=$?
+
           echo "GeckoView build complete at $(date)"
+          echo "Final disk space:"
+          df -h
+
+          exit $BUILD_EXIT
 
       - name: Clean up after GeckoView build
         run: |

@@ -9,5 +9,8 @@ ac_add_options --with-branding=mobile/android/branding/unofficial
 ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
 
+# Disable debug symbols to save massive amounts of disk space
+ac_add_options --disable-debug-symbols
+
 # Use fewer parallel jobs to reduce disk usage
 mk_add_options MOZ_MAKE_FLAGS="-j2"
