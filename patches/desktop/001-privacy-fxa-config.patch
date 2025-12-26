@@ -1,0 +1,176 @@
+diff --git a/browser/app/profile/firefox.js b/browser/app/profile/firefox.js
+index 1234567..abcdefg 100644
+--- a/browser/app/profile/firefox.js
++++ b/browser/app/profile/firefox.js
+@@ -1,3 +1,168 @@
++// ========================================
++// Sc00terFox Custom Firefox Configuration
++// Based on LibreWolf privacy settings
++// ========================================
++
++// ============================================
++// SELF-HOSTED FIREFOX ACCOUNTS CONFIGURATION
++// ============================================
++
++// Firefox Accounts server URLs
++pref("identity.fxaccounts.autoconfig.uri", "https://accounts.scootz.net");
++pref("identity.fxaccounts.remote.root", "https://accounts.scootz.net");
++pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.scootz.net");
++pref("identity.fxaccounts.remote.oauth.uri", "https://accounts.scootz.net/oauth");
++pref("identity.fxaccounts.remote.profile.uri", "https://accounts.scootz.net/profile/v1");
++
++// Sync server URL
++pref("identity.sync.tokenserver.uri", "https://sync.scootz.net/token/1.0/sync/1.5");
++
++// ============================================
++// PRIVACY & SECURITY SETTINGS (LibreWolf-based)
++// ============================================
++
++// PREF: Enable HTTPS-Only Mode
++defaultPref("dom.security.https_only_mode", true);
++defaultPref("dom.security.https_only_mode_ever_enabled", true);
++defaultPref("dom.security.https_only_mode_pbm", true);
++
++// PREF: Disable Telemetry
++pref("toolkit.telemetry.unified", false);
++pref("toolkit.telemetry.enabled", false);
++pref("toolkit.telemetry.server", "data:,");
++pref("toolkit.telemetry.archive.enabled", false);
++pref("toolkit.telemetry.newProfilePing.enabled", false);
++pref("toolkit.telemetry.shutdownPingSender.enabled", false);
++pref("toolkit.telemetry.updatePing.enabled", false);
++pref("toolkit.telemetry.bhrPing.enabled", false);
++pref("toolkit.telemetry.firstShutdownPing.enabled", false);
++pref("toolkit.telemetry.coverage.opt-out", true);
++pref("toolkit.coverage.opt-out", true);
++pref("toolkit.coverage.endpoint.base", "");
++pref("datareporting.healthreport.uploadEnabled", false);
++pref("datareporting.policy.dataSubmissionEnabled", false);
++pref("app.shield.optoutstudies.enabled", false);
++pref("browser.discovery.enabled", false);
++pref("browser.tabs.crashReporting.sendReport", false);
++
++// PREF: Disable Normandy/Studies
++pref("app.normandy.enabled", false);
++pref("app.normandy.api_url", "");
++
++// PREF: Disable Pocket
++pref("extensions.pocket.enabled", false);
++
++// PREF: Disable Sponsored Content
++pref("browser.newtabpage.activity-stream.showSponsored", false);
++pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
++pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
++
++// PREF: Content Blocking
++defaultPref("browser.contentblocking.category", "strict");
++
++// PREF: Enable Fingerprint Protection (RFP)
++defaultPref("privacy.resistFingerprinting", true);
++defaultPref("privacy.resistFingerprinting.block_mozAddonManager", true);
++defaultPref("privacy.resistFingerprinting.letterboxing", false);
++
++// PREF: Disable WebGL (fingerprinting vector)
++defaultPref("webgl.disabled", true);
++defaultPref("dom.webgpu.enabled", false);
++
++// PREF: Global Privacy Control
++defaultPref("privacy.globalprivacycontrol.enabled", true);
++defaultPref("privacy.globalprivacycontrol.pbmode.enabled", true);
++defaultPref("privacy.globalprivacycontrol.functionality.enabled", true);
++
++// PREF: Disable Disk Cache
++defaultPref("browser.cache.disk.enable", false);
++defaultPref("browser.privatebrowsing.forceMediaMemoryCache", true);
++defaultPref("media.memory_cache_max_size", 65536);
++
++// PREF: Session & History
++defaultPref("browser.sessionstore.privacy_level", 2);
++defaultPref("browser.formfill.enable", false);
++defaultPref("privacy.history.custom", true);
++
++// PREF: Sanitize on Shutdown
++defaultPref("privacy.sanitize.sanitizeOnShutdown", true);
++defaultPref("privacy.clearOnShutdown_v2.cache", true);
++defaultPref("privacy.clearOnShutdown_v2.cookiesAndStorage", false);
++defaultPref("privacy.clearOnShutdown_v2.historyFormDataAndDownloads", false);
++defaultPref("privacy.clearOnShutdown.sessions", false);
++
++// PREF: Cookie Behavior - Total Cookie Protection
++defaultPref("network.cookie.cookieBehavior", 5);
++defaultPref("privacy.partition.always_partition_third_party_non_cookie_storage", true);
++
++// PREF: WebRTC IP Leak Protection
++defaultPref("media.peerconnection.ice.default_address_only", true);
++defaultPref("media.peerconnection.ice.no_host", true);
++defaultPref("media.peerconnection.ice.proxy_only_if_behind_proxy", true);
++
++// PREF: Disable Geolocation
++defaultPref("geo.provider.network.url", "");
++defaultPref("geo.provider.ms-windows-location", false);
++defaultPref("geo.provider.use_corelocation", false);
++defaultPref("geo.provider.use_gpsd", false);
++defaultPref("geo.provider.use_geoclue", false);
++
++// PREF: Block Unsafe Downloads
++defaultPref("browser.safebrowsing.downloads.remote.enabled", false);
++
++// PREF: Disable Form Autofill
++defaultPref("extensions.formautofill.addresses.enabled", false);
++defaultPref("extensions.formautofill.creditCards.enabled", false);
++
++// PREF: Disable Media Autoplay
++defaultPref("media.autoplay.blocking_policy", 2);
++defaultPref("media.autoplay.default", 5);
++
++// PREF: DNS over HTTPS
++defaultPref("network.trr.mode", 3);
++defaultPref("network.trr.custom_uri", "https://mozilla.cloudflare-dns.com/dns-query");
++
++// PREF: Query Parameter Stripping
++defaultPref("privacy.query_stripping.enabled", true);
++defaultPref("privacy.query_stripping.enabled.pbmode", true);
++
++// PREF: Referrer Policy
++defaultPref("network.http.referer.XOriginPolicy", 2);
++defaultPref("network.http.referer.XOriginTrimmingPolicy", 2);
++
++// PREF: Disable Link Prefetching
++defaultPref("network.prefetch-next", false);
++defaultPref("network.dns.disablePrefetch", true);
++defaultPref("network.predictor.enabled", false);
++defaultPref("network.http.speculative-parallel-limit", 0);
++
++// PREF: Disable Hyperlink Auditing
++defaultPref("browser.send_pings", false);
++
++// PREF: Disable Beacon API
++defaultPref("beacon.enabled", false);
++
++// PREF: Disable Battery API
++defaultPref("dom.battery.enabled", false);
++
++// PREF: Enhanced Tracking Protection
++defaultPref("privacy.trackingprotection.enabled", true);
++defaultPref("privacy.trackingprotection.pbmode.enabled", true);
++defaultPref("privacy.trackingprotection.socialtracking.enabled", true);
++
++// PREF: Disable Extension Recommendations
++defaultPref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
++defaultPref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
++
++// PREF: Search Suggestions
++defaultPref("browser.search.suggest.enabled", false);
++defaultPref("browser.urlbar.suggest.searches", false);
++
++// PREF: Disable Password Manager
++defaultPref("signon.rememberSignons", false);
++defaultPref("signon.autofillForms", false);
++
++// PREF: Fingerprinting - Window Size
++defaultPref("privacy.window.maxInnerWidth", 1600);
++defaultPref("privacy.window.maxInnerHeight", 900);
++
+ #ifdef XP_UNIX
+ #ifndef XP_MACOSX
+ #define UNIX_BUT_NOT_MAC
