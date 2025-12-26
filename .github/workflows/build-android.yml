@@ -61,6 +61,13 @@ jobs:
                                "build-tools;34.0.0" \
                                "ndk;28.0.12433566"
 
+          # Verify NDK r28b is installed
+          echo "Installed NDK versions:"
+          ls -la $ANDROID_HOME/ndk/ || true
+
+          # Set ANDROID_NDK_HOME to the specific r28b version
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.0.12433566" >> $GITHUB_ENV
+
       - name: Free up disk space
         run: |
           echo "Before cleanup:"
@@ -160,10 +167,13 @@ jobs:
 
       - name: Setup mozconfig
         run: |
+          echo "Using NDK: $ANDROID_NDK_HOME"
+          echo "Using SDK: $ANDROID_HOME"
+
           if [ -f "configs/mozconfig-android" ]; then
             cp configs/mozconfig-android mozilla-central/mozconfig
           else
-            cat > mozilla-central/mozconfig <<'EOF'
+            cat > mozilla-central/mozconfig <<EOF
           # Build Firefox for Android
           ac_add_options --enable-application=mobile/android
           ac_add_options --target=aarch64-linux-android
@@ -173,7 +183,7 @@ jobs:
           ac_add_options --disable-debug
           ac_add_options --disable-tests
 
-          # Android SDK/NDK
+          # Android SDK/NDK - using r28b
           ac_add_options --with-android-ndk="$ANDROID_NDK_HOME"
           ac_add_options --with-android-sdk="$ANDROID_HOME"
 
@@ -184,10 +194,11 @@ jobs:
           ac_add_options --disable-crashreporter
           ac_add_options --disable-updater
 
-          mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
+          mk_add_options MOZ_MAKE_FLAGS="-j\$(nproc)"
           EOF
           fi
-          
+
+          echo "Generated mozconfig:"
           cat mozilla-central/mozconfig
       
       - name: Bootstrap build
