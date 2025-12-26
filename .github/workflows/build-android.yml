@@ -56,17 +56,18 @@ jobs:
       - name: Install Android SDK components
         run: |
           # Install specific NDK version r28b as required by Firefox
+          # Version 28.1.13356709 is NDK r28b
           sdkmanager --install "platform-tools" \
                                "platforms;android-34" \
                                "build-tools;34.0.0" \
-                               "ndk;28.0.12433566"
+                               "ndk;28.1.13356709"
 
           # Verify NDK r28b is installed
           echo "Installed NDK versions:"
           ls -la $ANDROID_HOME/ndk/ || true
 
           # Set ANDROID_NDK_HOME to the specific r28b version
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.0.12433566" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.1.13356709" >> $GITHUB_ENV
 
       - name: Free up disk space
         run: |
