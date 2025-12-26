@@ -183,6 +183,17 @@ jobs:
             echo "No custom preferences file found"
           fi
 
+      - name: Setup fake emulator to bypass check
+        run: |
+          # Create a fake emulator binary to satisfy the configure check
+          sudo mkdir -p /usr/local/lib/android/sdk/emulator
+          echo '#!/bin/bash' | sudo tee /usr/local/lib/android/sdk/emulator/emulator
+          echo 'exit 0' | sudo tee -a /usr/local/lib/android/sdk/emulator/emulator
+          sudo chmod +x /usr/local/lib/android/sdk/emulator/emulator
+
+          # Add to PATH so configure can find it
+          echo "/usr/local/lib/android/sdk/emulator" >> $GITHUB_PATH
+
       - name: Setup mozconfig
         run: |
           echo "Using NDK: $ANDROID_NDK_HOME"
@@ -214,9 +225,6 @@ jobs:
 
           # Use fewer parallel jobs to reduce disk usage (default is 4 cores on GitHub Actions)
           mk_add_options MOZ_MAKE_FLAGS="-j2"
-
-          # Set MOZ_ANDROID_EMULATOR to skip emulator check
-          export MOZ_ANDROID_EMULATOR=/usr/bin/true
           EOF
           fi
 

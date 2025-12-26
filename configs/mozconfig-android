@@ -11,6 +11,3 @@ ac_add_options --disable-updater
 
 # Use fewer parallel jobs to reduce disk usage
 mk_add_options MOZ_MAKE_FLAGS="-j2"
-
-# Set MOZ_ANDROID_EMULATOR to skip emulator check
-export MOZ_ANDROID_EMULATOR=/usr/bin/true
