@@ -214,6 +214,9 @@ jobs:
 
           # Use fewer parallel jobs to reduce disk usage (default is 4 cores on GitHub Actions)
           mk_add_options MOZ_MAKE_FLAGS="-j2"
+
+          # Set MOZ_ANDROID_EMULATOR to skip emulator check
+          export MOZ_ANDROID_EMULATOR=/usr/bin/true
           EOF
           fi
 
