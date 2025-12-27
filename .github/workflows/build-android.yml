@@ -268,45 +268,11 @@ jobs:
           df -h
 
           echo "Building GeckoView at $(date)"
-
-          # Run build in background and monitor disk space
-          ./mach build &
-          BUILD_PID=$!
-
-          # Monitor and cleanup during build
-          while kill -0 $BUILD_PID 2>/dev/null; do
-            sleep 300  # Check every 5 minutes
-
-            DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
-            echo "Disk usage: ${DISK_USAGE}%"
-
-            # If disk usage > 85%, clean up aggressively
-            if [ $DISK_USAGE -gt 85 ]; then
-              echo "WARNING: Disk usage high, cleaning up..."
-
-              # Clean cargo build artifacts
-              find . -type d -name target -exec rm -rf {}/debug \; 2>/dev/null || true
-              find . -type f -name "*.rlib" -delete 2>/dev/null || true
-
-              # Clean temporary files
-              sudo rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
-
-              # Clean more caches
-              rm -rf ~/.cargo/registry/src 2>/dev/null || true
-
-              df -h
-            fi
-          done
-
-          # Wait for build to complete and get exit code
-          wait $BUILD_PID
-          BUILD_EXIT=$?
+          ./mach build
 
           echo "GeckoView build complete at $(date)"
           echo "Final disk space:"
           df -h
-
-          exit $BUILD_EXIT
 
       - name: Clean up after GeckoView build
         run: |
