@@ -256,12 +256,22 @@ jobs:
           echo "Disk space after pre-build cleanup:"
           df -h
 
+      - name: Configure Cargo for CI
+        run: |
+          # Disable incremental compilation (adds 20-30% disk overhead in CI)
+          mkdir -p ~/.cargo
+          cat > ~/.cargo/config.toml <<'EOF'
+          [build]
+          incremental = false
+          EOF
+
       - name: Build GeckoView
         run: |
           cd mozilla-central
           export MOZBUILD_STATE_PATH=$HOME/.mozbuild
 
-          # Reduce Rust debug info to save disk space
+          # Critical Rust optimizations for disk space
+          export CARGO_INCREMENTAL=false
           export RUSTFLAGS="-C debuginfo=0"
 
           echo "Starting disk space:"
@@ -296,6 +306,20 @@ jobs:
           cd mozilla-central/mobile/android/fenix
 
           VERSION="${{ steps.clone.outputs.firefox_version }}"
+
+          # Configure Gradle for CI constraints
+          cat > gradle.properties <<'EOF'
+          # CI-optimized Gradle settings
+          org.gradle.daemon=false
+          org.gradle.parallel=false
+          org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+          org.gradle.caching=true
+          org.gradle.workers.max=2
+          android.builder.sdkDownload=false
+          EOF
+
+          echo "Gradle configuration:"
+          cat gradle.properties
 
           # Configure for debug or release
           if [ "${{ env.BUILD_TYPE }}" = "release" ]; then
